@@ -2,11 +2,11 @@
 # -*- encoding: utf-8 -*-
 '''
 @File    :   kegg.py
-@Time    :   2023/08/08 19:25:33
-@Author  :   Wanjin Hu 
+@Time    :   2023/03/27 19:25:33
+@Author  :   Wanjin.Hu 
 @Version :   1.0
-@Contact :   wanjin.hu@outlook.com
-@Description : get kegg pathway/KO result from eggnog-mapper
+@Contact :   wanjin.hu@diprobio.com
+@Description : 对使用 eggnog 方式获取的 kegg 信息进行处理，生成后续可以分析的 KO 基因表 (KO_samples.csv) 和 pathway 代谢通路表 (pathway_samples.csv)
 '''
 
 import pandas as pd
@@ -16,16 +16,19 @@ import argparse
 class KeggCount(object):
     def __init__(self):
         super(KeggCount,self).__init__()
-        self.kegg_db = "/pipe_script/kegg/KEGG_KO_ENZYME_PATHWAY.txt"
-        self.kegg_pathway = "/pipe_script/kegg/ko_pathway_uniq.txt" 
+        self.kegg_db = "/root/pipe_script/metagenome/pipe_script/kegg/KEGG_KO_ENZYME_PATHWAY.txt"    # 原始的 KO 对应的 KEGG 信息表【功能：统计 KO 基因】
+        self.kegg_pathway = "/root/pipe_script/metagenome/pipe_script/kegg/ko_pathway_uniq.txt"  # 处理过的 ko 代谢通路三个层级的信息表【功能：统计 pathway 代谢通路】
+        # self.KO = r"F:\Dipro-Project\metagenome\KEGG_KO.txt"    # 宏基因组分析得到的非冗余基因集对应的 KO 基因信息表【示例】
+        # self.pathway = r"F:\Dipro-Project\metagenome\KEGG_PATHWAY.txt"  # 宏基因组分析得到的非冗余基因集对应的 ko 的通路信息表【示例】
+        # self.sample_merge = r"F:\Dipro-Project\metagenome\merged_file.txt"  # 宏基因组分析得到的非冗余基因集在样本中的分布表【示例】
         if not os.path.exists(args.tmp):
             os.mkdir(args.tmp)
         
     def KO_count(self,df_gene,df_ko):
         """
-        @fun: get KO result
-        @df_gene: Distribution table of non-redundant gene sets in samples obtained from metagenomic analysis
-        @df_ko: KO gene information table corresponding to the non-redundant gene set obtained from metagenomic analysis
+        @功能：生成 KO 基因组成表
+        @df_gene: 宏基因组分析得到的非冗余基因集在样本中的分布表
+        @df_ko: 宏基因组分析得到的非冗余基因集对应的 KO 基因信息表
         """
         df_gene_ko = pd.merge(df_gene, df_ko, on="gene", how="inner")
         if os.path.exists("df_gene_ko.txt"):
@@ -68,9 +71,11 @@ class KeggCount(object):
                         continue
                         # print("{} not in kegg_db".format(KO_ids))
             f3.close()
+        # tmp_KO.txt 包含了所有冗余的 KO 信息，这一步需要对相同的 KO 求和合并
         KO_tmp = pd.read_csv("tmp_KO.txt", header=0, sep="\t")
         cols = KO_tmp.columns[2:]
         KO_tmp_1 = KO_tmp.groupby("KO")[cols].sum(numeric_only=True)
+        # 这里用了一个笨方法，重新打开文件进行匹配
         KO_tmp_1.to_csv("KO.txt", header=True, index=True, sep="\t")
         with open("KO.txt", 'r') as f4, open(self.kegg_db, 'r') as f5, open(args.outKO,'w') as f6:
             sample_line = f4.readline()
@@ -98,9 +103,9 @@ class KeggCount(object):
     
     def path_conut(self,df_gene,df_pathway):
         """
-        @fun: get pathway result
-        @df_gene: Distribution table of non-redundant gene sets in samples obtained from metagenomic analysis
-        @df_pathway: pathway information table corresponding to the non-redundant gene set obtained from metagenomic analysis
+        @功能：生成代谢通路 pathway 组成表
+        @df_gene: 宏基因组分析得到的非冗余基因集在样本中的分布表
+        @df_pathway: 宏基因组分析得到的非冗余基因集对应的 ko 的通路信息表
         """
         df_gene_pathway = pd.merge(df_gene, df_pathway, on="gene", how="inner")
         if os.path.exists("df_gene_pathway.txt"):
@@ -149,9 +154,11 @@ class KeggCount(object):
                             continue
                             # print("{} not in kegg_db".format(path_ids))
             f3.close()
+        # tmp_pathway.txt 包含了所有冗余的 pathway 信息，这一步需要对相同的 pathway 求和合并
         pathway_tmp = pd.read_csv("tmp_pathway.txt", header=0, sep="\t")
         cols = pathway_tmp.columns[3:]
         KO_tmp_1 = pathway_tmp.groupby("pathway")[cols].sum(numeric_only=True)
+        # 这里用了一个笨方法，重新打开文件进行匹配
         KO_tmp_1.to_csv("kegg.txt", header=True, index=True, sep="\t")
         with open("kegg.txt", 'r') as f4, open(self.kegg_pathway, 'r') as f5, open(args.outPathway,'w') as f6:
             sample_line = f4.readline()
@@ -179,7 +186,7 @@ class KeggCount(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="kegg",
-                                     usage="python kegg.py -kk KEGG_KO.txt -kp KEGG_PATHWAY.txt -mt merged_file.txt -ok out_KO.xls -op out_pathway.xls",
+                                     usage="python kegg.py -kk KEGG_KO.txt -kp KEGG_PATHWAY.txt -mt merged_file.txt -ok out_KO.csv -op out_pathway.csv",
                                      description="Merge KO/pathway count table from eggnog result.")
     parser.add_argument('-kk', '--kegg_KO', dest="keggKO",
                         type=str, required=True, help="Sample's kegg KO information, such as KEGG_KO.txt")

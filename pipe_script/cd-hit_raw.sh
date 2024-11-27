@@ -6,10 +6,10 @@ grep '>' $2|awk -F ' ' '{print $1}'|sed 's/>//g' > $3
 /root/miniconda3/bin/seqtk subseq $4 $3 > $5
 
 # /root/biosoft/bwa/bwa
-# bwa index $5 -p $6
-echo -e "gene\tlength" > $6
+bwa index $5 -p $6
+echo -e "gene\tlength" > $7
 # /root/biosoft/bioawk/bioawk
-bioawk -c fastx '{print $name, length($seq)}' $5 >> $6
+bioawk -c fastx '{print $name, length($seq)}' $5 >> $7
 
 ## demo
 ## cd-hit去冗余,先用蛋白序列去冗余
