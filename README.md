@@ -237,3 +237,7 @@ optional arguments:
 ## Contact 🐖
 
 Wanjin Hu (<wanjin.hu@outlook.com>)
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=wanjinhu/Metagenomic-Analysis-Pipeline&type=Date)](https://www.star-history.com/#wanjinhu/Metagenomic-Analysis-Pipeline&Date)
